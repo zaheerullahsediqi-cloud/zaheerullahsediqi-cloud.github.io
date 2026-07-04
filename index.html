@@ -446,6 +446,15 @@
   input:focus, textarea:focus{border-color: var(--brass); outline:none;}
   textarea{resize: vertical; min-height: 100px;}
   .rfq .btn-primary{width:100%; justify-content:center; margin-top:6px;}
+  .rfq .btn-primary:disabled{opacity:0.6; cursor:not-allowed; transform:none;}
+  .rfq-status{
+    margin-top: 14px;
+    font-size: 0.86rem;
+    font-family:'IBM Plex Mono', monospace;
+    min-height: 1.2em;
+  }
+  .rfq-status.ok{color: #8FC9A0;}
+  .rfq-status.err{color: #E28B7D;}
 
   @media (max-width: 860px){
     .contact-grid{grid-template-columns:1fr;}
@@ -467,6 +476,7 @@
   }
   .footer-inner .brand{color: var(--paper); font-size:1rem;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -524,8 +534,8 @@
     <div class="trust-strip">
       <div class="wrap trust-inner">
         <span><strong>SAM.gov</strong> Registered</span>
-        <span>UEI: <strong>NOT ACTIVE YET</strong></span>
-        <span>CAGE Code: <strong>NOT ACTIVE YET</strong></span>
+        <span>UEI: <strong>[Insert UEI]</strong></span>
+        <span>CAGE Code: <strong>[Insert CAGE]</strong></span>
         <span>Based in <strong>San Antonio, TX</strong></span>
       </div>
     </div>
@@ -677,7 +687,7 @@
           </div>
           <div>
             <span class="label">Phone</span>
-            210-350-4874
+            [Insert Phone Number]
           </div>
           <div>
             <span class="label">Location</span>
@@ -685,11 +695,11 @@
           </div>
         </div>
       </div>
-      <form class="rfq" action="mailto:info@kohinoorsuppliers.com" method="post" enctype="text/plain">
+      <form class="rfq" id="rfq-form">
         <div class="form-row">
           <div class="form-field">
             <label for="name">Name</label>
-            <input id="name" name="name" type="text" placeholder="Your name" required>
+            <input id="name" name="from_name" type="text" placeholder="Your name" required>
           </div>
           <div class="form-field">
             <label for="org">Organization</label>
@@ -699,7 +709,7 @@
         <div class="form-row">
           <div class="form-field">
             <label for="email">Email</label>
-            <input id="email" name="email" type="email" placeholder="you@agency.gov" required>
+            <input id="email" name="reply_to" type="email" placeholder="you@agency.gov" required>
           </div>
           <div class="form-field">
             <label for="phone">Phone</label>
@@ -709,10 +719,12 @@
         <div class="form-row">
           <div class="form-field full">
             <label for="details">What do you need?</label>
-            <textarea id="details" name="details" placeholder="Describe the requirement or paste a solicitation number..." required></textarea>
+            <textarea id="details" name="message" placeholder="Describe the requirement or paste a solicitation number..." required></textarea>
           </div>
         </div>
-        <button type="submit" class="btn btn-primary">Send Request</button>
+        <input type="hidden" name="to_email" value="zahirullahzadran73@gmail.com">
+        <button type="submit" class="btn btn-primary" id="rfq-submit">Send Request</button>
+        <p id="rfq-status" class="rfq-status" role="status" aria-live="polite"></p>
       </form>
     </div>
   </section>
@@ -733,5 +745,54 @@
   </div>
 </footer>
 
+<script>
+  // ---- EmailJS setup ----
+  // 1. Create a free account at https://www.emailjs.com
+  // 2. Add your Gmail as an "Email Service" -> copy the Service ID
+  // 3. Create an Email Template -> copy the Template ID
+  //    (Template should use {{from_name}}, {{org}}, {{reply_to}}, {{phone}}, {{message}}, {{to_email}})
+  // 4. Copy your Public Key from Account > General
+  // 5. Paste all three values into the placeholders below
+
+  const EMAILJS_PUBLIC_KEY = 'bjwPBjmQ5xTYB8VUj';
+  const EMAILJS_SERVICE_ID = 'service_e9ixd4c';
+  const EMAILJS_TEMPLATE_ID = 'template_0dwv0wa';
+
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+  const rfqForm = document.getElementById('rfq-form');
+  const rfqStatus = document.getElementById('rfq-status');
+  const rfqSubmit = document.getElementById('rfq-submit');
+
+  rfqForm.addEventListener('submit', function(e){
+    e.preventDefault();
+
+    if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY'){
+      rfqStatus.textContent = 'Form not connected yet — add your EmailJS keys in the script (see comments in the code).';
+      rfqStatus.className = 'rfq-status err';
+      return;
+    }
+
+    rfqSubmit.disabled = true;
+    rfqSubmit.textContent = 'Sending...';
+    rfqStatus.textContent = '';
+    rfqStatus.className = 'rfq-status';
+
+    emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, rfqForm)
+      .then(function(){
+        rfqStatus.textContent = 'Request sent — we\'ll follow up shortly.';
+        rfqStatus.className = 'rfq-status ok';
+        rfqForm.reset();
+      })
+      .catch(function(err){
+        rfqStatus.textContent = 'Something went wrong. Please try again or email us directly.';
+        rfqStatus.className = 'rfq-status err';
+      })
+      .finally(function(){
+        rfqSubmit.disabled = false;
+        rfqSubmit.textContent = 'Send Request';
+      });
+  });
+</script>
 </body>
 </html>
